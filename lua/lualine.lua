@@ -37,7 +37,7 @@ M.inactive_sections = {
 
 M.tabline = {}
 
-M.extensions = { }
+M.extensions = {}
 
 local function apply_configuration(config_table)
   if not config_table then return end
@@ -154,37 +154,32 @@ local function component_loader(component)
   end
 end
 
-
-local function load_components()
-  local function load_sections(sections)
-    for section_name, section in pairs(sections) do
-      for index, component in pairs(section) do
-        if type(component) == 'string' or type(component) == 'function' then
-          component = {component}
-        end
-        component.self = {}
-        component.self.section = section_name
-        component_loader(component)
-        section[index] = component
+local function load_sections(sections)
+  for section_name, section in pairs(sections) do
+    for index, component in pairs(section) do
+      if type(component) == 'string' or type(component) == 'function' then
+        component = {component}
       end
+      component.self = {}
+      component.self.section = section_name
+      component_loader(component)
+      section[index] = component
     end
   end
+end
+
+local function load_components()
   load_sections(M.sections)
   load_sections(M.inactive_sections)
   load_sections(M.tabline)
 end
 
 local function  load_extensions()
-  for _, extension in pairs(M.extensions) do
-    if type(extension) == 'string' then
-      require('lualine.extensions.' .. extension).load_extension()
-    end
-    if type(extension) == 'table' then
-      extension.load_extension()
-    end
-    if type(extension) == 'function' then
-      extension()
-    end
+  for index, extension in pairs(M.extensions) do
+    local local_extension = require('lualine.extensions.' .. extension)
+    load_sections(local_extension.sections)
+    load_sections(local_extension.inactive_sections)
+    M.extensions[index] = local_extension
   end
 end
 
@@ -210,7 +205,27 @@ local function lualine_set_theme()
   theme_set = M.options.theme
 end
 
-local function statusline(sections, is_focused)
+local function statusline(is_focused)
+  local sections = nil
+  for _, extension in ipairs(M.extensions) do
+    for _, filetype in ipairs(extension.filetypes) do
+      if vim.bo.filetype == filetype then
+        if is_focused then
+          sections = extension.sections
+        else
+          sections = extension.inactive_sections
+        end
+        break
+      end
+    end
+  end
+  if sections == nil then
+    if is_focused then
+      sections = M.sections
+    else
+      sections = M.inactive_sections
+    end
+  end
   if M.options.theme ~= theme_set then
     _G.lualine_set_theme()
   end
@@ -281,9 +296,9 @@ end
 
 local function status_dispatch()
   if vim.g.statusline_winid == vim.fn.win_getid() then
-    return statusline(M.sections, true)
+    return statusline(true)
   else
-    return statusline(M.inactive_sections, false)
+    return statusline(false)
   end
 end
 
