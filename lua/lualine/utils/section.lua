@@ -29,15 +29,9 @@ function M.draw_section(section, section_name, is_focused)
     -- Remove component separator with highlight for last component
     if not last_component_found and #status[component_no] > 0 then
       last_component_found = true
-      status[component_no] = section[component_no]:strip_separator()
-      if section_name < 'c' then
-        if type(section[first_component_no].options.separator) ~= 'table' and
-            section[1].options.section_separators[1] ~= '' then
-          status[component_no] = string.format('%s%%S{%s}',
-                                               status[component_no], section[1]
-                                                   .options.section_separators[1])
-        end
-      end
+      status[component_no] = section[component_no]:strip_separator(
+                                 highlight_name)
+      section[component_no].last_conponent = true
     end
     -- Remove component separator when color option is used in next component
     if strip_next_component then
