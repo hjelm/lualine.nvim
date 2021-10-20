@@ -254,6 +254,7 @@ sections = {lualine_a = {'mode'}}
 * `mode` (vim mode)
 * `progress` (%progress in file)
 * `tabs` (shows currently available tabs)
+* `window` (window number)
 
 </details>
 
